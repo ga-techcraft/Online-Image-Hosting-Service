@@ -94,3 +94,19 @@ $stmt->execute();
 
 * 全入力値に対するサニタイズ・バリデーションを実装
 * IPアドレス単位でのアップロード制限を実施
+
+
+## 設計
+### エンドポイント設計
+- フォームの表示 (GET /)
+- 画像のアップロード (POST /api/images)
+- 画像の表示 (GET /api/images/{unique-string})
+- 画像の削除 (GET /api/images/{unique-string})
+
+### データベース設計
+- images
+  - id (主キー) INT AUTO_INCREMENT PRIMARY KEY
+  - image_name (ファイル名) VARCHAR(255) NOT NULL 
+  - image_path (ファイルパス) VARCHAR(255) NOT NULL UNIQUE
+  - view_count (閲覧数) INT DEFAULT 0
+  - created_at (作成日時) TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
