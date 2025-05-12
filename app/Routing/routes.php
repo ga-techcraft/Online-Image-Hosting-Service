@@ -4,28 +4,89 @@ namespace Routing;
 
 use Response\Render\HTMLRenderer;
 use Response\Render\JSONRenderer;
+use Response\Render\BinaryRenderer;
+use Response\HTTPRenderer;
+
+use Database\MySQLWrapper;
 
 return [
   '' => function (): HTMLRenderer {
     return new HTMLRenderer('file_upload', []);
   },
+  // 画像アップロード
   'api/images/upload' => function (): JSONRenderer {
+    // 画像のバリデーション
+    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+
+    $fileExtension = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
+    
+    if (!in_array($fileExtension, $allowedExtensions)) {
+      return new JSONRenderer([
+        'error' => 'Invalid file type',
+      ]);
+    }
+
+    // 画像の保存（ストレージ）
+    $image = $_FILES['image'];
+    $uniqueString = bin2hex(random_bytes(16));
+    $filePath = __DIR__ . '/../storage/images/' . $uniqueString;
+    file_put_contents($filePath, file_get_contents($image['tmp_name']));
+
+    // 画像のパスの保存（DB）
+    $mysqli = new MySQLWrapper();
+    $query = "INSERT INTO images (image_name, unique_string) VALUES (?, ?)";
+    $stmt = $mysqli->prepare($query);
+    $stmt->bind_param("ss", $image['name'], $uniqueString);
+    $stmt->execute();
+    $stmt->close();
+    $mysqli->close();
+
     return new JSONRenderer([
-      // TODO: 画像を保存する
-      // TODO: 画像のURLを返す
-      'uniqueString' => 'uniqueString',
-    ]);
-  },
-  'api/images' => function (string $uniqueString = ''): JSONRenderer {
-    return new JSONRenderer([
-      // TODO: 画像を表示する
       'uniqueString' => $uniqueString,
     ]);
+
   },
-  'api/images/delete' => function (string $uniqueString = ''): JSONRenderer {
-    return new JSONRenderer([
-      // TODO: 画像を削除する
-      'uniqueString' => $uniqueString,
-    ]);
+  // 画像本体データを返す
+  'api/images/view' => function (): BinaryRenderer {
+    $uniqueString = $_GET['uniqueString'];
+    $binaryPath = __DIR__ . '/../storage/images/' . $uniqueString;
+    $mimeType = mime_content_type($binaryPath);
+    return new BinaryRenderer($mimeType, $uniqueString);
+  },
+  // 画像の削除
+  'api/images/delete' => function (): HTMLRenderer {
+    $uniqueString = $_GET['uniqueString'];
+
+    // DBに指定された画像が存在するか確認
+    $mysqli = new MySQLWrapper();
+    $query = "SELECT image_name FROM images WHERE unique_string = ?";
+    $stmt = $mysqli->prepare($query);
+    $stmt->bind_param("s", $uniqueString);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $stmt->close();
+    $mysqli->close();
+    
+    if($result->num_rows === 0){
+      return new HTMLRenderer('result', [
+        'result' => 'Image not found',
+      ]);
+    } else {
+      // DBから画像を削除
+      $mysqli = new MySQLWrapper();
+      $query = "DELETE FROM images WHERE unique_string = ?";
+      $stmt = $mysqli->prepare($query);
+      $stmt->bind_param("s", $uniqueString);
+      $stmt->execute();
+      $stmt->close();
+      $mysqli->close();
+
+      // 画像ファイルをディレクトリから削除
+      unlink(__DIR__ . '/../storage/images/' . $uniqueString);
+
+      return new HTMLRenderer('result', [
+        'result' => 'Image deleted',
+      ]);
+    }
   },
 ];

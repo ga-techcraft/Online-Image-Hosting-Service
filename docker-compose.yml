@@ -13,6 +13,7 @@ services:
 
   nginx:
     image: nginx:latest
+    platform: linux/amd64
     container_name: nginx-container
     ports:
       - "8080:80"

@@ -4,6 +4,7 @@ namespace Database;
 
 use Helpers\Settings;
 use mysqli;
+use Exception;
 
 class MySQLWrapper extends mysqli{
 

@@ -3,6 +3,6 @@
 FROM php:8.1-fpm
 
 # Install extensions and dependencies
-RUN docker-php-ext-install pdo pdo_mysql
+RUN docker-php-ext-install pdo pdo_mysql mysqli
 
 WORKDIR /var/www/html
