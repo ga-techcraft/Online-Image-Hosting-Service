@@ -5,9 +5,9 @@ namespace Routing;
 use Response\Render\HTMLRenderer;
 use Response\Render\JSONRenderer;
 use Response\Render\BinaryRenderer;
-use Response\HTTPRenderer;
 
-use Helpers\DatabaseHelper;
+use Database\DataAccess\Implementions\ImagesDAOImpl;
+use Models\Images;
 
 return [
   '' => function (): HTMLRenderer {
@@ -33,7 +33,9 @@ return [
     file_put_contents($filePath, file_get_contents($image['tmp_name']));
 
     // 画像のパスの保存（DB）
-    DatabaseHelper::insertImage($image['name'], $uniqueString);
+    $images = new Images($image['name'], $uniqueString);
+    $ImageDAOImpl = new ImagesDAOImpl();
+    $ImageDAOImpl->create($images);
 
     return new JSONRenderer([
       'uniqueString' => $uniqueString,
@@ -52,7 +54,8 @@ return [
     $uniqueString = $_GET['uniqueString'];
 
     // DBに指定された画像が存在するか確認
-    $image = DatabaseHelper::getImage($uniqueString);
+    $ImageDAOImpl = new ImagesDAOImpl();
+    $image = $ImageDAOImpl->getByUniqueString($uniqueString);
     
     if($image === null){
       return new HTMLRenderer('result', [
@@ -60,7 +63,7 @@ return [
       ]);
     } else {
       // DBから画像を削除
-      DatabaseHelper::deleteImage($uniqueString);
+      $ImageDAOImpl->delete($image->getId());
 
       // 画像ファイルをディレクトリから削除
       unlink(__DIR__ . '/../storage/images/' . $uniqueString);
