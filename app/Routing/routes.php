@@ -8,6 +8,8 @@ use Response\Render\BinaryRenderer;
 
 use Database\DataAccess\Implementions\ImagesDAOImpl;
 use Models\Images;
+use Helpers\ValidationHelper;
+use Types\ValueType;
 
 return [
   '' => function (): HTMLRenderer {
@@ -15,32 +17,39 @@ return [
   },
   // 画像アップロード
   'api/images/upload' => function (): JSONRenderer {
-    // 画像のバリデーション
-    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+    try {
+      if (!isset($_FILES['image'])) {
+        throw new \InvalidArgumentException("No file uploaded.");
+      }
 
-    $fileExtension = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
+      // 画像のバリデーション
+      $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+
+      $fileExtension = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
     
-    if (!in_array($fileExtension, $allowedExtensions)) {
+      if (!in_array($fileExtension, $allowedExtensions)) {
+        throw new \InvalidArgumentException("The provided file type is not allowed.");
+      }
+
+      // 画像の保存（ストレージ）
+      $image = $_FILES['image'];
+      $uniqueString = bin2hex(random_bytes(16));
+      $filePath = __DIR__ . '/../storage/images/' . $uniqueString;
+      file_put_contents($filePath, file_get_contents($image['tmp_name']));
+
+      // 画像のパスの保存（DB）
+      $images = new Images($image['name'], $uniqueString);
+      $ImageDAOImpl = new ImagesDAOImpl();
+      $ImageDAOImpl->create($images);
+
       return new JSONRenderer([
-        'error' => 'Invalid file type',
+        'uniqueString' => $uniqueString,
+      ]);
+    } catch (\Exception $e) {
+      return new JSONRenderer([
+        'error' => $e->getMessage(),
       ]);
     }
-
-    // 画像の保存（ストレージ）
-    $image = $_FILES['image'];
-    $uniqueString = bin2hex(random_bytes(16));
-    $filePath = __DIR__ . '/../storage/images/' . $uniqueString;
-    file_put_contents($filePath, file_get_contents($image['tmp_name']));
-
-    // 画像のパスの保存（DB）
-    $images = new Images($image['name'], $uniqueString);
-    $ImageDAOImpl = new ImagesDAOImpl();
-    $ImageDAOImpl->create($images);
-
-    return new JSONRenderer([
-      'uniqueString' => $uniqueString,
-    ]);
-
   },
   // 画像本体データを返す
   'api/images/view' => function (): BinaryRenderer {
@@ -52,6 +61,15 @@ return [
   // 画像の削除
   'api/images/delete' => function (): HTMLRenderer {
     $uniqueString = $_GET['uniqueString'];
+    try {
+      ValidationHelper::validateFields([
+        'uniqueString' => ValueType::STRING,
+      ], $_GET);
+    } catch (\Exception $e) {
+      return new HTMLRenderer('result', [
+        'result' => $e->getMessage(),
+      ]);
+    }
 
     // DBに指定された画像が存在するか確認
     $ImageDAOImpl = new ImagesDAOImpl();
