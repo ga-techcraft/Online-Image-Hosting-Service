@@ -6,18 +6,11 @@ use Database\Interfaces\ImagesDAO;
 use Database\DatabaseManager;
 use Models\Images;
 
-class ImagesDAOImpl implements ImagesDAO{
+class ImagesDAOMySQLImpl implements ImagesDAO{
   public function create(Images $images): bool{
     $mysqli = DatabaseManager::getMysqliConnection();
     $query = "INSERT INTO images (image_name, unique_string) VALUES (?, ?)";
     return $mysqli->prepareAndExecute($query, 'ss', [$images->getImageName(), $images->getUniqueString()]);
-  }
-
-  public function getById(int $id): ?Images{
-    $mysqli = DatabaseManager::getMysqliConnection();
-    $query = "SELECT * FROM images WHERE id = ?";
-    $result = $mysqli->prepareAndFetchAll($query, 'i', [$id]);
-    return $result ? $this->resultToImage($result[0]) : null;
   }
 
   public function getByUniqueString(string $uniqueString): ?Images{
@@ -33,10 +26,10 @@ class ImagesDAOImpl implements ImagesDAO{
     return $mysqli->prepareAndExecute($query, 'ssi', [$images->getImageName(), $images->getUniqueString(), $images->getId()]);
   }
 
-  public function delete(int $id): bool{
+  public function delete(string $uniqueString): bool{
     $mysqli = DatabaseManager::getMysqliConnection();
-    $query = "DELETE FROM images WHERE id = ?";
-    return $mysqli->prepareAndExecute($query, 'i', [$id]);
+    $query = "DELETE FROM images WHERE unique_string = ?";
+    return $mysqli->prepareAndExecute($query, 's', [$uniqueString]);
   }
 
   public function createOrUpdate(Images $images): bool{

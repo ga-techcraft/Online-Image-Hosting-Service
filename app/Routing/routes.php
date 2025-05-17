@@ -6,10 +6,11 @@ use Response\Render\HTMLRenderer;
 use Response\Render\JSONRenderer;
 use Response\Render\BinaryRenderer;
 
-use Database\DataAccess\Implementions\ImagesDAOImpl;
 use Models\Images;
 use Helpers\ValidationHelper;
 use Types\ValueType;
+use Database\DataAccess\DAOFactory;
+
 
 return [
   '' => function (): HTMLRenderer {
@@ -39,8 +40,12 @@ return [
 
       // 画像のパスの保存（DB）
       $images = new Images($image['name'], $uniqueString);
-      $ImageDAOImpl = new ImagesDAOImpl();
+      $ImageDAOImpl = DAOFactory::getImagesDAO();
       $ImageDAOImpl->create($images);
+
+      // // 画像のパスの保存（キャッシュ）
+      // $ImageDAOMemcachedImpl = new ImagesDAOMemcachedImpl();
+      // $ImageDAOMemcachedImpl->create($images);
 
       return new JSONRenderer([
         'uniqueString' => $uniqueString,
@@ -72,7 +77,7 @@ return [
     }
 
     // DBに指定された画像が存在するか確認
-    $ImageDAOImpl = new ImagesDAOImpl();
+    $ImageDAOImpl = DAOFactory::getImagesDAO();
     $image = $ImageDAOImpl->getByUniqueString($uniqueString);
     
     if($image === null){
@@ -81,7 +86,7 @@ return [
       ]);
     } else {
       // DBから画像を削除
-      $ImageDAOImpl->delete($image->getId());
+      $ImageDAOImpl->delete($image->getUniqueString());
 
       // 画像ファイルをディレクトリから削除
       unlink(__DIR__ . '/../storage/images/' . $uniqueString);
