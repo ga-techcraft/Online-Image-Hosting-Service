@@ -6,7 +6,7 @@ use Commands\AbstractCommand;
 use Commands\Argument;
 
 class Seed extends AbstractCommand{
-    // public static bool $isRequiredCommandValue = true; // デフォルト値はfalse
+    public static bool $isRequiredCommandValue = false;
     protected static string $alias = 'seed';
 
     public static function getArguments(): array{

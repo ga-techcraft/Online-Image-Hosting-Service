@@ -105,13 +105,22 @@ class CodeGeneration extends AbstractCommand{
 
     class $name extends AbstractSeeder{
         protected ?string \$tableName = null;
-        protected array \$tableData = [];
+        protected array \$tableData = [
+            [
+                'data_type' => 'string',
+                'column_name' => 'name',
+            ],
+            [
+                'data_type' => 'int',
+                'column_name' => 'age',
+            ],
+        ];
 
         public function createRowData(): array{
             return [
                 [
-                    'data_type' => 'string',
-                    'column_name' => 'name',
+                    'this is name string',
+                    25,
                 ],
             ];
         }

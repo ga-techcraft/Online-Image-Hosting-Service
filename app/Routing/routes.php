@@ -6,7 +6,7 @@ use Response\Render\HTMLRenderer;
 use Response\Render\JSONRenderer;
 use Response\Render\BinaryRenderer;
 
-use Models\Images;
+use Models\ORM\Image;
 use Helpers\ValidationHelper;
 use Types\ValueType;
 use Database\DataAccess\DAOFactory;
@@ -39,9 +39,14 @@ return [
       file_put_contents($filePath, file_get_contents($image['tmp_name']));
 
       // 画像のパスの保存（DB）
-      $images = new Images($image['name'], $uniqueString);
-      $ImageDAOImpl = DAOFactory::getImagesDAO();
-      $ImageDAOImpl->create($images);
+      // $images = new Images($image['name'], $uniqueString);
+      // $ImageDAOImpl = DAOFactory::getImagesDAO();
+      // $ImageDAOImpl->create($images);
+
+      Image::create([
+        'image_name' => $image['name'],
+        'unique_string' => $uniqueString,
+      ]);
 
       // // 画像のパスの保存（キャッシュ）
       // $ImageDAOMemcachedImpl = new ImagesDAOMemcachedImpl();

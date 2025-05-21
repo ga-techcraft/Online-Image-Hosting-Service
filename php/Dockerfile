@@ -14,11 +14,17 @@ RUN apt-get update && apt-get install -y \
     g++ \
     make \
     autoconf \
+    git \
+    zip \
+    unzip \
     && pecl install memcached \
     && docker-php-ext-enable memcached \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install extensions and dependencies
 RUN docker-php-ext-install pdo pdo_mysql mysqli
+
+# Composerをコピーして利用できるようにする（公式から）
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html

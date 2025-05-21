@@ -2,11 +2,9 @@
 
 namespace Database;
 
-use Database\MySQLWrapper;
 use Exception;
 
 abstract class AbstractSeeder implements Seeder{
-    protected MySQLWrapper $mysqli;
     protected ?string $tableName = null;
     protected array $tableData = [];
 
@@ -15,10 +13,6 @@ abstract class AbstractSeeder implements Seeder{
         'string' => 's',
         'float' => 'd',
     ];
-
-    public function __construct(){
-        $this->mysqli = new MySQLWrapper();
-    }
 
     public function seed(): void{
         $data = $this->createRowData();
@@ -54,12 +48,8 @@ abstract class AbstractSeeder implements Seeder{
 
         $query = sprintf("INSERT INTO %s (%s  ) VALUES (%s);", $this->tableName, implode(',', $columnNames), $placeholders);
 
-        $stmt = $this->mysqli->prepare($query);
-        $datatypes = implode('', array_map(function($item){
+        DatabaseManager::getMysqliConnection()->prepareAndExecute($query, implode('', array_map(function($item){
             return self::AVAILABLE_DATA_TYPES[$item['data_type']];
-        }, $this->tableData));
-        $stmt->bind_param($datatypes, ...array_values($row));
-        $stmt->execute();
-        $stmt->close();
+        }, $this->tableData)), $row);
     }
 }
