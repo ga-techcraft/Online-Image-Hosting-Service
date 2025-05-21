@@ -39,7 +39,7 @@ return [
       file_put_contents($filePath, file_get_contents($image['tmp_name']));
 
       // 画像のパスの保存（DB）
-      // $images = new Images($image['name'], $uniqueString);
+      // $images = new Image($image['name'], $uniqueString);
       // $ImageDAOImpl = DAOFactory::getImagesDAO();
       // $ImageDAOImpl->create($images);
 
